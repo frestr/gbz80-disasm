@@ -1,2 +1,2 @@
 # gbz80-disasm
-Simple disassembler for the Game Boy's custom Z80-based ISA
+Note: This disassembler is as simple as it gets. It pays no attention to things like cartridge headers, memory banks, data locations etc. Should only be used if you want to see disassembled code from a location with a known good offset.
