@@ -24,11 +24,8 @@ $ ./disasm test.rom 2 3
 0x000002:    00           NOP
 0x000003:    01 ab 12     LD     BC,$12AB
 
-$ ./disasm test.rom -r
-0x000000:    00           NOP
-0x000001:    00           NOP
-0x000002:    00           NOP
-0x000003:    01 ab 12     LD     BC,$12AB
-0x000006:    02           LD     (BC),A
-0x000007:    c9           RET
+$ ./disasm test.rom -r 3 
+0x000003:    01 ab 12     LD     BC,$12AB          
+0x000006:    02           LD     (BC),A            
+0x000007:    c9           RET                      
 ```
