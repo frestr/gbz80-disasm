@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 #include "disassembler.h"
 
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        printf("Usage: %s <rom_file> [addr_start] [addr_end]\n", argv[0]);
+        printf("Usage: %s <rom_file> [-r] [addr_start [[addr_end]]\n", argv[0]);
         return 1;
     }
 
@@ -27,11 +29,18 @@ int main(int argc, char** argv)
     fread(buf, fsize, 1, f);
     fclose(f);
 
+    uint8_t addr_arg = 2;
+    bool stop_on_ret = false;
+    if (argc > 2 && strncmp(argv[2], "-r", 2) == 0) {
+        stop_on_ret = true;        
+        addr_arg = 3;
+    }
+
     // Read addr_start
     char *endptr;
     int32_t addr_start = 0;
-    if (argc >= 3) {
-        addr_start = strtol(argv[2], &endptr, 16);
+    if (argc >= addr_arg + 1) {
+        addr_start = strtol(argv[addr_arg], &endptr, 16);
         if (*endptr != '\0') {
             printf("ERROR: Unable to read addr_start\n");
             return 1;
@@ -44,8 +53,8 @@ int main(int argc, char** argv)
 
     // Read addr_end
     int32_t addr_end = fsize - 1;
-    if (argc >= 4) {
-        addr_end = strtol(argv[3], &endptr, 16);
+    if (argc >= addr_arg + 2) {
+        addr_end = strtol(argv[addr_arg+1], &endptr, 16);
         if (*endptr != '\0') {
             printf("ERROR: Unable to read addr_end\n");
             return 1;
@@ -62,7 +71,10 @@ int main(int argc, char** argv)
 
     // Disassemble in address interval
     uint32_t pc = addr_start;
+    bool ret_reached;
     while (pc <= (uint32_t)addr_end) {
-        pc += disassemble(buf, pc);
+        pc += disassemble(buf, pc, &ret_reached);
+        if (ret_reached && stop_on_ret)
+            break;
     }
 }

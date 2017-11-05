@@ -14,7 +14,7 @@ static void print_line(char *op, uint8_t *code, uint8_t op_bytes, uint32_t pc)
 // Defined under disassemble
 static void extended_ops(uint8_t code, char *op);
 
-uint8_t disassemble(uint8_t *buf, uint32_t pc)
+uint8_t disassemble(uint8_t *buf, uint32_t pc, bool *ret_reached)
 {
     uint8_t *code = &buf[pc];
     uint8_t op_bytes = 1; 
@@ -295,6 +295,7 @@ uint8_t disassemble(uint8_t *buf, uint32_t pc)
     }
 
     print_line(op, code, op_bytes, pc);
+    *ret_reached = (code[0] == 0xC9 || code[0] == 0xD9);
     return op_bytes;
 }
 
