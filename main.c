@@ -3,19 +3,70 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <getopt.h>
 #include "disassembler.h"
+
+void print_help(char *cmd_name)
+{
+    printf("Usage: %s [option(s)] <rom_file>\n", cmd_name);
+    printf("\nOptions:\n");
+    printf("  -s    start address (default = 0)\n");
+    printf("  -e    end address (default = end of file)\n");
+    printf("  -r    stop on first RET or RETI reached\n");
+}
 
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        printf("Usage: %s <rom_file> [-r] [addr_start [[addr_end]]\n", argv[0]);
+        print_help(argv[0]);
         return 1;
     }
 
-    FILE *f = fopen(argv[1], "rb");
-    if (f == NULL) {
-        printf("ERROR: Unable to open file %s\n", argv[1]);
+    int32_t addr_start = 0;
+    int32_t addr_end = -1;
+    bool stop_on_ret;
+
+    // Read options
+    char *endptr;
+    int c;
+    while ((c = getopt(argc, argv, "rs:e:")) != -1) {
+        switch (c) {
+            case 'r':
+                stop_on_ret = true;
+                break;
+            case 's':
+                addr_start = strtol(optarg, &endptr, 16);
+                if (*endptr != '\0') {
+                    printf("ERROR: Unable to read addr_start\n");
+                    return 1;
+                }
+                break;
+            case 'e':
+                addr_end = strtol(optarg, &endptr, 16);
+                if (*endptr != '\0') {
+                    printf("ERROR: Unable to read addr_end\n");
+                    return 1;
+                }
+                break;
+            default:
+                print_help(argv[0]);
+                return 1;
+        }
+    }
+
+    if (optind == argc) {
+        printf("ERROR: No ROM file specified\n");
         return 1;
+    }
+
+    FILE *f;
+    for (int index = optind; index < argc; ++index) {
+        // Read ROM file
+        f = fopen(argv[index], "rb");
+        if (f == NULL) {
+            printf("ERROR: Unable to open file %s\n", argv[index]);
+            return 1;
+        }
     }
 
     // Get file size
@@ -29,44 +80,20 @@ int main(int argc, char** argv)
     fread(buf, fsize, 1, f);
     fclose(f);
 
-    uint8_t addr_arg = 2;
-    bool stop_on_ret = false;
-    if (argc > 2 && strncmp(argv[2], "-r", 2) == 0) {
-        stop_on_ret = true;        
-        addr_arg = 3;
+    if (addr_end == -1) {
+        addr_end = fsize - 1;
     }
-
-    // Read addr_start
-    char *endptr;
-    int32_t addr_start = 0;
-    if (argc >= addr_arg + 1) {
-        addr_start = strtol(argv[addr_arg], &endptr, 16);
-        if (*endptr != '\0') {
-            printf("ERROR: Unable to read addr_start\n");
-            return 1;
-        }
-        if (addr_start < 0 || addr_start >= fsize) {
-            printf("ERROR: addr_start is out of range\n");
-            return 1;
-        }
+    if (addr_start < 0 || addr_start >= fsize) {
+        printf("ERROR: addr_start is out of range\n");
+        return 1;
     }
-
-    // Read addr_end
-    int32_t addr_end = fsize - 1;
-    if (argc >= addr_arg + 2) {
-        addr_end = strtol(argv[addr_arg+1], &endptr, 16);
-        if (*endptr != '\0') {
-            printf("ERROR: Unable to read addr_end\n");
-            return 1;
-        }
-        if (addr_end < 0 || addr_end >= fsize) {
-            printf("ERROR: addr_start is out of range\n");
-            return 1;
-        }
-        if (addr_end < addr_start) {
-            printf("ERROR: addr_start > addr_end\n");
-            return 1;
-        }
+    if (addr_end < 0 || addr_end >= fsize) {
+        printf("ERROR: addr_end is out of range\n");
+        return 1;
+    }
+    if (addr_start > addr_end) {
+        printf("ERROR: addr_start > addr_end\n");
+        return 1;
     }
 
     // Disassemble in address interval
