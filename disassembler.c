@@ -12,7 +12,7 @@ static void print_line(char *op, uint8_t *code, uint8_t op_bytes, uint32_t pc)
     printf("    %s\n", op);
 }
 
-uint8_t disassemble(uint8_t *buf, uint32_t pc, bool *ret_reached)
+uint8_t disassemble(uint8_t *buf, uint32_t pc, bool *ret_reached, int32_t addr_offset)
 {
     uint8_t *code = &buf[pc];
     char op[32];
@@ -25,7 +25,7 @@ uint8_t disassemble(uint8_t *buf, uint32_t pc, bool *ret_reached)
     else
         snprintf(op, 32, op_string, code[2], code[1]);
 
-    print_line(op, code, op_len, pc);
+    print_line(op, code, op_len, pc + addr_offset);
     *ret_reached = (code[0] == 0xC9 || code[0] == 0xD9);
     return op_len;
 }

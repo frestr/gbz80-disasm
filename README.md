@@ -9,11 +9,12 @@ Should only be used if you want to see disassembled code from a location with a 
 $ ./disasm 
 Usage: ./disasm [option(s)] <rom_file>
 
-Options:
-  -s    start address (default = 0)
-  -e    end address (default = end of file)
-  -r    stop on first RET or RETI reached
-
+Options (all values are given in hexadecimal):
+  -s  <start_address>   (default = 0)
+  -e  <end_address>     (default = end of file)
+  -r                    stop on first RET or RETI reached
+  -l  <load_addr>       FOR .GBS-FILES. subtract 0x70 (header size)
+                        and offset addresses with load_addr
 $ ./disasm test.rom
 0x000000:    00           NOP
 0x000001:    00           NOP

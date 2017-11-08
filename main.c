@@ -9,10 +9,12 @@
 void print_help(char *cmd_name)
 {
     printf("Usage: %s [option(s)] <rom_file>\n", cmd_name);
-    printf("\nOptions:\n");
-    printf("  -s    start address (default = 0)\n");
-    printf("  -e    end address (default = end of file)\n");
-    printf("  -r    stop on first RET or RETI reached\n");
+    printf("\nOptions (all values are given in hexadecimal):\n");
+    printf("  -s  <start_address>   (default = 0)\n");
+    printf("  -e  <end_address>     (default = end of file)\n");
+    printf("  -r                    stop on first RET or RETI reached\n");
+    printf("  -l  <load_addr>       FOR .GBS-FILES. subtract 0x70 (header size)\n");
+    printf("                        and offset addresses with load_addr\n");
 }
 
 int main(int argc, char** argv)
@@ -25,11 +27,12 @@ int main(int argc, char** argv)
     int32_t addr_start = 0;
     int32_t addr_end = -1;
     bool stop_on_ret;
+    int32_t addr_offset = 0;
 
     // Read options
     char *endptr;
     int c;
-    while ((c = getopt(argc, argv, "rs:e:")) != -1) {
+    while ((c = getopt(argc, argv, "rs:e:l:")) != -1) {
         switch (c) {
             case 'r':
                 stop_on_ret = true;
@@ -47,6 +50,14 @@ int main(int argc, char** argv)
                     printf("ERROR: Unable to read addr_end\n");
                     return 1;
                 }
+                break;
+            case 'l':
+                addr_offset = strtol(optarg, &endptr, 16);
+                if (*endptr != '\0') {
+                    printf("ERROR: Unable to read load_addr\n");
+                    return 1;
+                }
+                addr_offset -= 0x70;
                 break;
             default:
                 print_help(argv[0]);
@@ -80,9 +91,17 @@ int main(int argc, char** argv)
     fread(buf, fsize, 1, f);
     fclose(f);
 
-    if (addr_end == -1) {
-        addr_end = fsize - 1;
+
+    if (addr_offset != 0 && fsize < 0x70) {
+        printf("ERROR: File is smaller than .gbs-header...\n");
     }
+    if (addr_end == -1) {
+        addr_end = addr_offset + fsize - 1;
+    }
+
+    addr_start -= addr_offset;
+    addr_end -= addr_offset;
+
     if (addr_start < 0 || addr_start >= fsize) {
         printf("ERROR: addr_start is out of range\n");
         return 1;
@@ -100,7 +119,7 @@ int main(int argc, char** argv)
     uint32_t pc = addr_start;
     bool ret_reached;
     while (pc <= (uint32_t)addr_end) {
-        pc += disassemble(buf, pc, &ret_reached);
+        pc += disassemble(buf, pc, &ret_reached, addr_offset);
         if (ret_reached && stop_on_ret)
             break;
     }
