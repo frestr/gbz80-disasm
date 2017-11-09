@@ -91,7 +91,6 @@ int main(int argc, char** argv)
     fread(buf, fsize, 1, f);
     fclose(f);
 
-
     if (addr_offset != 0 && fsize < 0x70) {
         printf("ERROR: File is smaller than .gbs-header...\n");
     }
@@ -123,4 +122,5 @@ int main(int argc, char** argv)
         if (ret_reached && stop_on_ret)
             break;
     }
+    free(buf);
 }
