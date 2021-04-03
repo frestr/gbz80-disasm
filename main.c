@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
     int32_t addr_start = 0;
     int32_t addr_end = -1;
-    bool stop_on_ret;
+    bool stop_on_ret = false;
     int32_t addr_offset = 0;
 
     // Read options
